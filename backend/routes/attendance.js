@@ -617,7 +617,6 @@ router.put('/:id', auth, requireManagerOrAdmin, async (req, res) => {
         const {
             time_in,
             time_out,
-            hours_worked,
             status,
             notes,
             reason
@@ -636,9 +635,15 @@ router.put('/:id', auth, requireManagerOrAdmin, async (req, res) => {
             });
         }
 
+        const existingRecord = existing[0];
+
         // Build update query dynamically
         const updateFields = [];
         const updateParams = [];
+
+        // Use existing values if not provided in update
+        const finalTimeIn = time_in !== undefined ? time_in : existingRecord.time_in;
+        const finalTimeOut = time_out !== undefined ? time_out : existingRecord.time_out;
 
         if (time_in !== undefined) {
             updateFields.push('time_in = ?');
@@ -650,9 +655,17 @@ router.put('/:id', auth, requireManagerOrAdmin, async (req, res) => {
             updateParams.push(time_out);
         }
 
-        if (hours_worked !== undefined) {
-            updateFields.push('total_hours = ?');
-            updateParams.push(parseFloat(hours_worked));
+        // Recalculate hours_worked based on time_in and time_out
+        if (finalTimeIn && finalTimeOut) {
+            const timeInDate = new Date(`1970-01-01T${finalTimeIn}`);
+            const timeOutDate = new Date(`1970-01-01T${finalTimeOut}`);
+            const diffMs = timeOutDate - timeInDate;
+            const hours = diffMs / (1000 * 60 * 60);
+            
+            if (hours > 0) {
+                updateFields.push('total_hours = ?');
+                updateParams.push(parseFloat(hours.toFixed(2)));
+            }
         }
 
         if (status !== undefined) {
@@ -794,7 +807,11 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
 // Get attendance statistics for dashboard
 router.get('/stats', auth, async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        // Use local date format YYYY-MM-DD to match database date column
+        const now = new Date();
+        const today = now.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD in local time
+        
+        console.log('🔍 Attendance Stats - Today\'s date:', today);
         
         // Get today's attendance stats
         const todayStats = await db.execute(`
@@ -805,8 +822,10 @@ router.get('/stats', auth, async (req, res) => {
                 SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late,
                 SUM(CASE WHEN status = 'on_leave' THEN 1 ELSE 0 END) as onLeave
             FROM attendance_records ar
-            WHERE ar.date = ?
+            WHERE DATE(ar.date) = ?
         `, [today]);
+
+        console.log('🔍 Attendance Stats - Query result:', todayStats[0]);
 
         // Get total employees count
         const totalEmployees = await db.execute(`
@@ -826,6 +845,8 @@ router.get('/stats', auth, async (req, res) => {
                 ? (((todayStats[0] && todayStats[0].present) || 0) / totalEmployees[0].count * 100).toFixed(1)
                 : 0
         };
+
+        console.log('🔍 Attendance Stats - Final stats:', stats);
 
         res.json({
             success: true,

@@ -14,9 +14,9 @@ const Dashboard = () => {
 
   // Calculate attendance rate
   const totalEmployees = employeeStats?.data?.total_employees || 0;
-  const presentToday = attendanceStats?.data?.present_today || 0;
-  const absentToday = attendanceStats?.data?.absent_today || 0;
-  const lateToday = attendanceStats?.data?.late_today || 0;
+  const presentToday = attendanceStats?.data?.present || 0;
+  const absentToday = attendanceStats?.data?.absent || 0;
+  const lateToday = attendanceStats?.data?.late || 0;
   const attendanceRate = totalEmployees > 0 ? Math.round((presentToday / totalEmployees) * 100) : 0;
 
   return (
