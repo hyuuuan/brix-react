@@ -43,7 +43,7 @@ const ProtectedRoute = ({ children, roles = [] }) => {
   // Check role-based access if roles are specified
   if (roles.length > 0 && user && !roles.includes(user.role)) {
     console.log('🔒 ProtectedRoute: Insufficient permissions, user role:', user.role);
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/my-attendance" replace />;
   }
 
   console.log('🔒 ProtectedRoute: Access granted');

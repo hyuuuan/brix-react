@@ -25,6 +25,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           />
         </svg>
       ),
+      roles: ['admin', 'manager'],
     },
     {
       name: 'Employees',
@@ -54,6 +55,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           />
         </svg>
       ),
+      roles: ['admin', 'manager'],
     },
     {
       name: 'Analytics',
@@ -68,6 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           />
         </svg>
       ),
+      roles: ['admin', 'manager'],
     },
     {
       name: 'Payroll',

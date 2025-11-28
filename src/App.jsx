@@ -5,7 +5,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import { Login, Dashboard, Employees, Attendance, Analytics, Payroll, Settings, MyAttendance, Security } from './pages';
@@ -20,6 +20,13 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Default route component that redirects based on user role
+const DefaultRoute = () => {
+  const { user } = useAuth();
+  const defaultPath = user?.role === 'admin' || user?.role === 'manager' ? '/dashboard' : '/my-attendance';
+  return <Navigate to={defaultPath} replace />;
+};
 
 function App() {
   return (
@@ -39,8 +46,15 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route index element={<DefaultRoute />} />
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute roles={['admin', 'manager']}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="employees"
                 element={
@@ -49,8 +63,22 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="attendance" element={<Attendance />} />
-              <Route path="analytics" element={<Analytics />} />
+              <Route
+                path="attendance"
+                element={
+                  <ProtectedRoute roles={['admin', 'manager']}>
+                    <Attendance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="analytics"
+                element={
+                  <ProtectedRoute roles={['admin', 'manager']}>
+                    <Analytics />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="payroll"
                 element={
