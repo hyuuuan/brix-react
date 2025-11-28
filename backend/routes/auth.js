@@ -247,6 +247,81 @@ router.get('/verify', auth, async (req, res) => {
     }
 });
 
+// Change username endpoint
+router.post('/change-username', auth, async (req, res) => {
+    try {
+        const { newUsername, password } = req.body;
+
+        if (!newUsername || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'New username and password are required'
+            });
+        }
+
+        if (newUsername.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username must be at least 3 characters long'
+            });
+        }
+
+        // Get current user data
+        const users = await db.execute(
+            'SELECT password_hash FROM user_accounts WHERE employee_id = ?',
+            [req.user.employee_id]
+        );
+
+        if (!users || users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, users[0].password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Password is incorrect'
+            });
+        }
+
+        // Check if username already exists
+        const existing = await db.execute(
+            'SELECT id FROM user_accounts WHERE username = ? AND employee_id != ?',
+            [newUsername, req.user.employee_id]
+        );
+
+        if (existing && existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username already exists'
+            });
+        }
+
+        // Update username
+        await db.execute(
+            'UPDATE user_accounts SET username = ?, updated_at = NOW() WHERE employee_id = ?',
+            [newUsername, req.user.employee_id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Username changed successfully',
+            data: { username: newUsername }
+        });
+
+    } catch (error) {
+        console.error('Change username error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during username change'
+        });
+    }
+});
+
 // Change password endpoint
 router.post('/change-password', auth, async (req, res) => {
     try {
@@ -267,12 +342,12 @@ router.post('/change-password', auth, async (req, res) => {
         }
 
         // Get current password hash
-        const [users] = await db.execute(
+        const users = await db.execute(
             'SELECT password_hash FROM user_accounts WHERE employee_id = ?',
             [req.user.employee_id]
         );
 
-        if (users.length === 0) {
+        if (!users || users.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'

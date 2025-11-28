@@ -40,6 +40,15 @@ const authApi = {
     return response.data;
   },
 
+  // Change username
+  async changeUsername(newUsername, password) {
+    const response = await apiClient.post('/auth/change-username', {
+      newUsername,
+      password,
+    });
+    return response.data;
+  },
+
   // Change password
   async changePassword(currentPassword, newPassword) {
     const response = await apiClient.post('/auth/change-password', {

@@ -159,6 +159,12 @@ export const AuthProvider = ({ children }) => {
     return token;
   };
 
+  // Update user data
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('directflow_user', JSON.stringify(updatedUser));
+  };
+
   const value = {
     user,
     token,
@@ -171,6 +177,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     getCurrentUser,
     getToken,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
