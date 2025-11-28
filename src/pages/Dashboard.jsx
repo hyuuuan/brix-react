@@ -168,20 +168,24 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Yesterday Comparison */}
+          {/* Real-time Stats */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">YESTERDAY VS TODAY</span>
-              <span className="text-red-500 font-semibold">-13</span>
+              <span className="text-gray-600">ATTENDANCE RATE</span>
+              <span className={`font-semibold ${
+                attendanceRate >= 90 ? 'text-green-500' : 
+                attendanceRate >= 70 ? 'text-orange-500' : 
+                'text-red-500'
+              }`}>{attendanceRate}%</span>
             </div>
             <div className="flex items-center justify-between mt-2">
               <div className="text-center flex-1">
-                <div className="text-xs text-gray-500 mb-1">Yesterday</div>
-                <div className="text-lg font-bold text-gray-900">13/14</div>
+                <div className="text-xs text-gray-500 mb-1">Total Employees</div>
+                <div className="text-lg font-bold text-gray-900">{totalEmployees}</div>
               </div>
               <div className="text-center flex-1 border-l border-gray-200">
-                <div className="text-xs text-gray-500 mb-1">Last Week</div>
-                <div className="text-lg font-bold text-gray-900">92.9%</div>
+                <div className="text-xs text-gray-500 mb-1">Present Today</div>
+                <div className="text-lg font-bold text-gray-900">{presentToday}</div>
               </div>
             </div>
           </div>
@@ -271,25 +275,27 @@ const Dashboard = () => {
 
       {/* Bottom Section - 3 Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Next Payday */}
+        {/* Attendance Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Next Payday</h3>
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+            <h3 className="text-lg font-bold text-gray-900">Attendance Summary</h3>
+            <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
           </div>
           <div className="p-6">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">Countdown to next payment</p>
-            <div className="text-6xl font-bold text-primary-600 mb-2">-69</div>
-            <p className="text-sm text-gray-600 mb-6">DAYS REMAINING</p>
+            <p className="text-sm text-gray-600 mb-2">Today's attendance rate</p>
+            <div className="text-6xl font-bold text-primary-600 mb-2">{attendanceRate}%</div>
+            <p className="text-sm text-gray-600 mb-6">OVERALL RATE</p>
             <div className="pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-gray-600">Present:</span>
+                <span className="font-semibold text-green-600">{presentToday}</span>
+              </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">DATE:</span>
-                <span className="font-semibold text-gray-900">Sat, Sep 20, 2025</span>
+                <span className="text-gray-600">Absent:</span>
+                <span className="font-semibold text-red-600">{absentToday}</span>
               </div>
             </div>
           </div>
@@ -316,26 +322,29 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Payroll Summary */}
+        {/* Status Breakdown */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Payroll Summary</h3>
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+            <h3 className="text-lg font-bold text-gray-900">Status Breakdown</h3>
+            <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
           </div>
           <div className="p-6">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">Financial insights & analytics</p>
-            <div className="text-5xl font-bold text-primary-600 mb-2">₱350,000</div>
-            <p className="text-sm font-semibold text-gray-900 mb-2">Estimated Monthly Total</p>
-            <p className="text-xs text-gray-500 mb-6">based on current rates</p>
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Last Period:</span>
-                <span className="font-semibold text-gray-900">₱370,000₱</span>
+            <p className="text-sm text-gray-600 mb-4">Today's attendance breakdown</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">On Time</span>
+                <span className="text-2xl font-bold text-green-600">{presentToday - lateToday}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Late</span>
+                <span className="text-2xl font-bold text-orange-600">{lateToday}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Absent</span>
+                <span className="text-2xl font-bold text-red-600">{absentToday}</span>
               </div>
             </div>
           </div>

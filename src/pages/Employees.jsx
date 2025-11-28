@@ -58,7 +58,6 @@ const Employees = () => {
   const handleViewEmployee = (employee) => {
     setSelectedEmployee(employee);
     // Could open a view modal or navigate to detail page
-    console.log('View employee:', employee);
   };
 
   const handleDeleteClick = (employee) => {

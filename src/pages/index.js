@@ -10,3 +10,5 @@ export { default as Attendance } from './Attendance';
 export { default as Analytics } from './Analytics';
 export { default as Payroll } from './Payroll';
 export { default as Settings } from './Settings';
+export { default as MyAttendance } from './MyAttendance';
+export { default as Security } from './Security';

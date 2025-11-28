@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
-import { Login, Dashboard, Employees, Attendance, Analytics, Payroll, Settings } from './pages';
+import { Login, Dashboard, Employees, Attendance, Analytics, Payroll, Settings, MyAttendance, Security } from './pages';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -67,6 +67,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="my-attendance" element={<MyAttendance />} />
+              <Route path="security" element={<Security />} />
             </Route>
 
             {/* Catch all - redirect to dashboard */}

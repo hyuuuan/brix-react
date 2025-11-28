@@ -182,7 +182,7 @@ const Login = () => {
           {/* Footer */}
           <div className="px-8 py-4 bg-gray-50 border-t border-gray-200">
             <p className="text-xs text-center text-gray-500">
-              © 2025 Bricks Company. All rights reserved.
+              © 2025 WEBDEV Project. React + Express.
             </p>
           </div>
         </div>
