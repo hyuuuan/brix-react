@@ -2,7 +2,6 @@
   "name": "bricks-attendance-system",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
   "description": "Full-stack Bricks Attendance Management System with React frontend and Express backend",
   "scripts": {
     "dev": "vite",
