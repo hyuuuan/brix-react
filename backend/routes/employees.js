@@ -437,8 +437,15 @@ router.put('/:employeeId', auth, requireManagerOrAdmin, async (req, res) => {
             shift_schedule,
             salary_type,
             work_schedule,
-            status
+            status,
+            role
         } = req.body;
+
+        console.log('🔄 Update Employee Request:', {
+            employeeId,
+            role,
+            allData: req.body
+        });
 
         // Map old field names to new ones for backward compatibility
         const actualSalaryType = salary_type || employment_type;
@@ -454,6 +461,7 @@ router.put('/:employeeId', auth, requireManagerOrAdmin, async (req, res) => {
         }
 
         const employeeCode = existing[0].employee_id;
+        console.log('👤 Employee Code:', employeeCode);
 
         // Check if email belongs to another employee
         if (email) {
@@ -528,6 +536,16 @@ router.put('/:employeeId', auth, requireManagerOrAdmin, async (req, res) => {
             `UPDATE employees SET ${updateFields.join(', ')} WHERE id = ?`,
             updateParams
         );
+
+        // Update role in user_accounts table if provided
+        if (role !== undefined) {
+            console.log('🔐 Updating role in user_accounts:', { role, employeeCode });
+            const result = await db.execute(
+                'UPDATE user_accounts SET role = ?, updated_at = NOW() WHERE employee_id = ?',
+                [role, employeeCode]
+            );
+            console.log('🔐 Role update result:', result);
+        }
 
         // Get updated employee data
         const updatedEmployee = await db.execute(`
