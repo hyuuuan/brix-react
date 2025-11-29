@@ -9,6 +9,8 @@ router.get('/current-status', auth, async (req, res) => {
         const employee_id = req.user.employee_id;
         const today = new Date().toLocaleDateString('en-CA'); // Use local date in YYYY-MM-DD format
 
+        console.log('🔍 Current Status Check:', { employee_id, today });
+
         // Get today's attendance record
         const result = await db.execute(`
             SELECT * FROM attendance_records 
@@ -16,8 +18,11 @@ router.get('/current-status', auth, async (req, res) => {
             ORDER BY created_at DESC LIMIT 1
         `, [employee_id, today]);
 
-        const records = Array.isArray(result[0]) ? result[0] : (result[0] ? [result[0]] : []);
-        const currentRecord = records.length > 0 ? records[0] : null;
+        console.log('🔍 Query Result:', result);
+
+        const currentRecord = result && result.length > 0 ? result[0] : null;
+
+        console.log('🔍 Current Record:', currentRecord);
 
         let status = 'not_clocked_in';
         let lastAction = null;
@@ -46,6 +51,8 @@ router.get('/current-status', auth, async (req, res) => {
                 canClockOut = false;
             }
         }
+
+        console.log('🔍 Capabilities:', { canClockIn, canClockOut, canStartBreak, canEndBreak });
 
         res.json({
             success: true,
@@ -89,6 +96,8 @@ router.post('/clock', auth, async (req, res) => {
         const today = now.toLocaleDateString('en-CA'); // Use local date in YYYY-MM-DD format
         const currentTime = now.toTimeString().split(' ')[0].substring(0, 8); // HH:MM:SS format
 
+        console.log('⏰ Clock Action:', { action, employee_id, today, currentTime });
+
         // Get today's attendance record
         const result = await db.execute(`
             SELECT * FROM attendance_records 
@@ -96,38 +105,42 @@ router.post('/clock', auth, async (req, res) => {
             ORDER BY created_at DESC LIMIT 1
         `, [employee_id, today]);
         
-        const existingRecords = Array.isArray(result[0]) ? result[0] : (result[0] ? [result[0]] : []);
+        console.log('⏰ Existing Records Query Result:', result);
+        
+        const existingRecord = result && result.length > 0 ? result[0] : null;
+        
+        console.log('⏰ Existing Record:', existingRecord);
 
         if (action === 'in') {
             // Check if already clocked in today (but not yet clocked out)
-            if (existingRecords.length > 0 && existingRecords[0].time_in && !existingRecords[0].time_out) {
+            if (existingRecord && existingRecord.time_in && !existingRecord.time_out) {
                 return res.status(400).json({
                     success: false,
                     message: 'Already clocked in. Please clock out first.',
                     data: {
-                        current_record: existingRecords[0]
+                        current_record: existingRecord
                     }
                 });
             }
 
             let attendanceId;
             
-            if (existingRecords.length > 0) {
+            if (existingRecord) {
                 // Update existing record for additional clock-in
                 await db.execute(`
                     UPDATE attendance_records 
                     SET time_in = ?, time_out = NULL, status = 'present', notes = ?, updated_at = NOW()
                     WHERE id = ?
-                `, [currentTime, notes, existingRecords[0].id]);
-                attendanceId = existingRecords[0].id;
+                `, [currentTime, notes || null, existingRecord.id]);
+                attendanceId = existingRecord.id;
             } else {
                 // Create new record for first clock-in of the day
-                const [result] = await db.execute(`
+                const insertResult = await db.execute(`
                     INSERT INTO attendance_records (
                         employee_id, date, time_in, status, notes, created_at, updated_at
                     ) VALUES (?, ?, ?, 'present', ?, NOW(), NOW())
-                `, [employee_id, today, currentTime, notes]);
-                attendanceId = result.insertId;
+                `, [employee_id, today, currentTime, notes || null]);
+                attendanceId = insertResult.insertId;
             }
 
             res.json({
@@ -146,14 +159,14 @@ router.post('/clock', auth, async (req, res) => {
 
         } else { // action === 'out'
             // Check if there's an active clock-in record
-            if (existingRecords.length === 0 || !existingRecords[0].time_in || existingRecords[0].time_out) {
+            if (!existingRecord || !existingRecord.time_in || existingRecord.time_out) {
                 return res.status(400).json({
                     success: false,
                     message: 'No active clock-in record found. Please clock in first.'
                 });
             }
 
-            const record = existingRecords[0];
+            const record = existingRecord;
             
             // Parse time_in properly
             const timeInStr = record.time_in;
@@ -191,7 +204,7 @@ router.post('/clock', auth, async (req, res) => {
                 UPDATE attendance_records 
                 SET time_out = ?, total_hours = ?, overtime_hours = ?, status = ?, notes = ?, updated_at = NOW()
                 WHERE id = ?
-            `, [currentTime, totalHours.toFixed(2), overtimeHours.toFixed(2), status, notes, record.id]);
+            `, [currentTime, totalHours.toFixed(2), overtimeHours.toFixed(2), status, notes || null, record.id]);
 
             res.json({
                 success: true,
@@ -276,7 +289,7 @@ router.post('/break', auth, async (req, res) => {
                 UPDATE attendance_records 
                 SET break_start = ?, notes = ?, updated_at = NOW()
                 WHERE id = ?
-            `, [currentTime, notes, record.id]);
+            `, [currentTime, notes || null, record.id]);
 
             res.json({
                 success: true,
@@ -311,7 +324,7 @@ router.post('/break', auth, async (req, res) => {
                 UPDATE attendance_records 
                 SET break_end = ?, notes = ?, updated_at = NOW()
                 WHERE id = ?
-            `, [currentTime, notes, record.id]);
+            `, [currentTime, notes || null, record.id]);
 
             res.json({
                 success: true,

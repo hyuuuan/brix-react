@@ -732,8 +732,8 @@ const MyAttendance = () => {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">{summary?.present_days || 0}</div>
-                <div className="text-xs text-gray-600 mt-1">DAYS WORKED</div>
+                <div className="text-2xl font-bold text-orange-600">{summary?.total_hours || 0}h</div>
+                <div className="text-xs text-gray-600 mt-1">HOURS WORKED</div>
               </div>
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">₱{formatCurrency(summary?.hourly_rate)}</div>

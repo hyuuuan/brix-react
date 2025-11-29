@@ -12,7 +12,8 @@
     "server:dev": "nodemon server.js",
     "start": "concurrently \"npm run server\" \"npm run dev\"",
     "start:dev": "concurrently \"npm run server:dev\" \"npm run dev\"",
-    "restart": "pkill -f 'node server.js' || true && pkill -f 'vite' || true && npm run start:dev"
+    "restart": "pkill -f 'node server.js' || true && pkill -f 'vite' || true && npm run start:dev",
+    "close": "pkill -f 'node server.js' || true && pkill -f 'vite' || true"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
