@@ -476,7 +476,8 @@ router.get('/', auth, async (req, res) => {
         res.json({
             success: true,
             data: {
-                records,
+                attendance: records,  // For MyAttendance compatibility
+                records,              // For other pages
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
@@ -768,58 +769,123 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
         } else {
             const now = new Date();
             if (period === 'week') {
-                startDate = new Date(now.getDate() - 7).toISOString().split('T')[0];
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                startDate = weekAgo.toLocaleDateString('en-CA');
             } else if (period === 'month') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA');
             } else {
-                startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                startDate = new Date(now.getFullYear(), 0, 1).toLocaleDateString('en-CA');
             }
-            endDate = new Date().toISOString().split('T')[0];
+            endDate = now.toLocaleDateString('en-CA');
         }
 
-        const summaryData = await Promise.all([
-            // Total records
-            db.execute(`
-                SELECT COUNT(*) as total_days
-                FROM attendance_records 
-                WHERE employee_id = ? AND date >= ? AND date <= ?
-            `, [targetEmployeeId, startDate, endDate]),
+        // Get employee wage info
+        const employeeInfo = await db.execute(`
+            SELECT wage, overtime_rate, salary_type FROM employees WHERE employee_id = ?
+        `, [targetEmployeeId]);
 
-            // Total hours worked
-            db.execute(`
-                SELECT SUM(total_hours) as total_hours
-                FROM attendance_records 
-                WHERE employee_id = ? AND date >= ? AND date <= ? AND total_hours IS NOT NULL
-            `, [targetEmployeeId, startDate, endDate]),
+        const employeeData = employeeInfo[0]?.[0] || employeeInfo[0] || {};
+        const wage = parseFloat(employeeData.wage) || 15.00;
+        const overtimeRateMultiplier = parseFloat(employeeData.overtime_rate) || 1.5;
+        const overtimeRate = wage * overtimeRateMultiplier;
 
-            // Status breakdown
-            db.execute(`
-                SELECT status, COUNT(*) as count
-                FROM attendance_records 
-                WHERE employee_id = ? AND date >= ? AND date <= ?
-                GROUP BY status
-            `, [targetEmployeeId, startDate, endDate]),
+        // Get comprehensive attendance data
+        const [attendanceData] = await db.execute(`
+            SELECT 
+                COUNT(*) as total_days,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_days,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_days,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_days,
+                SUM(CASE WHEN status IN ('sick', 'vacation', 'holiday') THEN 1 ELSE 0 END) as leave_days,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as on_time_days,
+                SUM(CASE WHEN total_hours <= 8 THEN total_hours ELSE 8 END) as regular_hours,
+                SUM(COALESCE(overtime_hours, CASE WHEN total_hours > 8 THEN total_hours - 8 ELSE 0 END)) as overtime_hours,
+                SUM(total_hours) as total_hours,
+                AVG(total_hours) as avg_daily_hours
+            FROM attendance_records 
+            WHERE employee_id = ? AND DATE(date) >= ? AND DATE(date) <= ?
+        `, [targetEmployeeId, startDate, endDate]);
 
-            // Average hours per day
-            db.execute(`
-                SELECT AVG(total_hours) as avg_hours
-                FROM attendance_records 
-                WHERE employee_id = ? AND date >= ? AND date <= ? 
-                AND total_hours IS NOT NULL AND total_hours > 0
-            `, [targetEmployeeId, startDate, endDate])
-        ]);
+        console.log('📊 Query Results:', {
+            targetEmployeeId,
+            startDate,
+            endDate,
+            rawData: attendanceData[0],
+            queryParams: [targetEmployeeId, startDate, endDate]
+        });
+
+        // Let's also check what records exist for this employee
+        const [checkRecords] = await db.execute(`
+            SELECT date, status, total_hours FROM attendance_records 
+            WHERE employee_id = ? 
+            ORDER BY date DESC 
+            LIMIT 5
+        `, [targetEmployeeId]);
+        console.log('📊 Recent records for this employee:', checkRecords);
+
+        const stats = attendanceData[0] || {};
+        
+        // Calculate rates
+        const totalDays = parseInt(stats.total_days) || 0;
+        const presentDays = parseInt(stats.present_days) || 0;
+        const lateDays = parseInt(stats.late_days) || 0;
+        const absentDays = parseInt(stats.absent_days) || 0;
+        const onTimeDays = parseInt(stats.on_time_days) || 0;
+        
+        const attendanceRate = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(1) : '100';
+        const punctualityRate = presentDays > 0 ? ((onTimeDays / presentDays) * 100).toFixed(1) : '100';
+        
+        // Calculate hours
+        const regularHours = parseFloat(stats.regular_hours) || 0;
+        const overtimeHours = parseFloat(stats.overtime_hours) || 0;
+        const totalHours = parseFloat(stats.total_hours) || 0;
+        const avgDailyHours = parseFloat(stats.avg_daily_hours) || 0;
+        
+        // Calculate earnings
+        const regularPay = regularHours * wage;
+        const overtimePay = overtimeHours * overtimeRate;
+        const monthlyEarnings = regularPay + overtimePay;
+        
+        // Calculate monthly projection (22 working days)
+        const monthlyProjection = avgDailyHours * wage * 22;
+
+        console.log('📊 Summary Data:', {
+            employee_id: targetEmployeeId,
+            startDate,
+            endDate,
+            total_days: totalDays,
+            present_days: presentDays,
+            wage,
+            overtimeRate,
+            regularHours,
+            overtimeHours,
+            totalHours
+        });
 
         res.json({
             success: true,
             data: {
                 employee_id: targetEmployeeId,
                 period: { start_date: startDate, end_date: endDate },
-                summary: {
-                    total_days: summaryData[0][0].total_days,
-                    total_hours: parseFloat(summaryData[1][0].total_hours || 0),
-                    average_hours_per_day: parseFloat(summaryData[3][0].avg_hours || 0),
-                    status_breakdown: summaryData[2]
-                }
+                total_days: totalDays,
+                present_days: presentDays,
+                absent_days: absentDays,
+                late_days: lateDays,
+                leave_days: parseInt(stats.leave_days) || 0,
+                on_time_days: onTimeDays,
+                attendance_rate: parseFloat(attendanceRate),
+                punctuality_rate: parseFloat(punctualityRate),
+                regular_hours: parseFloat(regularHours.toFixed(1)),
+                overtime_hours: parseFloat(overtimeHours.toFixed(1)),
+                total_hours: parseFloat(totalHours.toFixed(1)),
+                avg_daily_hours: parseFloat(avgDailyHours.toFixed(1)),
+                hourly_rate: parseFloat(wage.toFixed(2)),
+                overtime_rate: parseFloat(overtimeRate.toFixed(2)),
+                regular_pay: parseFloat(regularPay.toFixed(2)),
+                overtime_pay: parseFloat(overtimePay.toFixed(2)),
+                monthly_earnings: parseFloat(monthlyEarnings.toFixed(2)),
+                monthly_projection: parseFloat(monthlyProjection.toFixed(2))
             }
         });
 

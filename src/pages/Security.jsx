@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../api';
+import { formatManilaDate } from '../utils/dateUtils';
 
 const Security = () => {
   const { user, updateUser } = useAuth();
@@ -167,7 +168,11 @@ const Security = () => {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">Never</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {user?.password_changed_at 
+                  ? formatManilaDate(user.password_changed_at, 'M/D/YYYY') 
+                  : 'Never'}
+              </p>
               <p className="text-xs text-gray-600">Last Password Change</p>
             </div>
           </div>
@@ -181,7 +186,11 @@ const Security = () => {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">7/19/2025</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {user?.created_at 
+                  ? formatManilaDate(user.created_at, 'M/D/YYYY') 
+                  : '--'}
+              </p>
               <p className="text-xs text-gray-600">Account Created</p>
             </div>
           </div>
@@ -195,8 +204,10 @@ const Security = () => {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">--</p>
-              <p className="text-xs text-gray-600">Login Attempts</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {user?.failed_login_attempts ?? 0}
+              </p>
+              <p className="text-xs text-gray-600">Failed Login Attempts</p>
             </div>
           </div>
         </div>

@@ -74,7 +74,9 @@ const MyAttendance = () => {
   const fetchSummary = async () => {
     try {
       const response = await attendanceApi.getAttendanceSummary();
+      console.log('📊 Summary Response:', JSON.stringify(response, null, 2));
       if (response.success) {
+        console.log('📊 Summary Data:', JSON.stringify(response.data, null, 2));
         setSummary(response.data);
       }
     } catch (error) {
@@ -84,13 +86,12 @@ const MyAttendance = () => {
 
   const fetchRecentEntries = async () => {
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
+      const endDate = toManilaISODate(getManilaTime());
+      const startDate = toManilaISODate(getManilaDaysAgo(30));
       
       const response = await attendanceApi.getAttendanceRecords({
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
+        startDate,
+        endDate
       });
       
       if (response.success) {
@@ -200,6 +201,16 @@ const MyAttendance = () => {
     const [outHours, outMinutes] = timeOut.split(':').map(Number);
     const totalMinutes = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
     return (totalMinutes / 60).toFixed(1);
+  };
+
+  const formatCurrency = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? '0.00' : num.toFixed(2);
+  };
+
+  const formatHours = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? '0.0' : num.toFixed(1);
   };
 
   if (loading) {
@@ -447,7 +458,7 @@ const MyAttendance = () => {
           </div>
           <div className="p-6">
 
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {recentEntries.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No recent time entries found
@@ -457,7 +468,7 @@ const MyAttendance = () => {
                 const dateInfo = formatDate(entry.date);
                 const hours = calculateHours(entry.time_in, entry.time_out);
                 const isLate = entry.is_late;
-                const isToday = new Date(entry.date).toDateString() === new Date().toDateString();
+                const isToday = toManilaISODate(entry.date) === toManilaISODate(getManilaTime());
                 
                 return (
                   <div 
@@ -530,7 +541,7 @@ const MyAttendance = () => {
                 No overtime requests found
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {overtimeRequests.map((request) => {
                   const dateInfo = formatDate(request.request_date);
                   const statusColors = {
@@ -604,29 +615,29 @@ const MyAttendance = () => {
 
             <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg p-6 mb-4">
               <div className="text-3xl font-bold text-gray-900 mb-2">
-                ₱{summary?.monthly_earnings?.toFixed(2) || '0.00'}
+                ₱{formatCurrency(summary?.monthly_earnings)}
               </div>
               <div className="text-sm text-gray-600">MONTHLY EARNINGS</div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">₱{summary?.regular_pay?.toFixed(2) || '0.00'}</div>
+                <div className="text-lg font-bold text-gray-900">₱{formatCurrency(summary?.regular_pay)}</div>
                 <div className="text-xs text-gray-600 mt-1">REGULAR PAY</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">₱{summary?.overtime_pay?.toFixed(2) || '0.00'}</div>
+                <div className="text-lg font-bold text-gray-900">₱{formatCurrency(summary?.overtime_pay)}</div>
                 <div className="text-xs text-gray-600 mt-1">OVERTIME PAY</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-lg font-bold text-gray-900">{summary?.total_hours || '0.0'}h</div>
+                <div className="text-lg font-bold text-gray-900">{formatHours(summary?.total_hours)}h</div>
                 <div className="text-xs text-gray-600 mt-1">TOTAL HOURS</div>
               </div>
             </div>
 
             <div className="mt-4 p-3 bg-orange-50 rounded-lg">
               <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">{summary?.avg_daily_hours || '0.0'}h</div>
+                <div className="text-lg font-bold text-gray-900">{formatHours(summary?.avg_daily_hours)}h</div>
                 <div className="text-xs text-gray-600 mt-1">AVG DAILY HOURS</div>
               </div>
             </div>
@@ -649,26 +660,26 @@ const MyAttendance = () => {
               <div className="flex items-center gap-3 p-4 border-l-4 border-green-500 bg-green-50 rounded">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Regular Hours</div>
-                  <div className="text-xs text-gray-600">{summary?.regular_hours || '0.0'}h @ ₱{summary?.hourly_rate || '15.00'}/hr</div>
+                  <div className="text-xs text-gray-600">{formatHours(summary?.regular_hours)}h @ ₱{formatCurrency(summary?.hourly_rate)}/hr</div>
                 </div>
-                <div className="text-lg font-bold text-gray-900">₱{summary?.regular_pay?.toFixed(2) || '0.00'}</div>
+                <div className="text-lg font-bold text-gray-900">₱{formatCurrency(summary?.regular_pay)}</div>
               </div>
 
               <div className="flex items-center gap-3 p-4 border-l-4 border-orange-500 bg-orange-50 rounded">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Overtime Hours</div>
-                  <div className="text-xs text-gray-600">{summary?.overtime_hours || '0.0'}h @ ₱{summary?.overtime_rate || '22.50'}/hr</div>
+                  <div className="text-xs text-gray-600">{formatHours(summary?.overtime_hours)}h @ ₱{formatCurrency(summary?.overtime_rate)}/hr</div>
                 </div>
-                <div className="text-lg font-bold text-gray-900">₱{summary?.overtime_pay?.toFixed(2) || '0.00'}</div>
+                <div className="text-lg font-bold text-gray-900">₱{formatCurrency(summary?.overtime_pay)}</div>
               </div>
 
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-gray-700">Total Hours:</span>
-                  <span className="text-lg font-bold text-gray-900">{summary?.total_hours || '0.0'}h</span>
+                  <span className="text-lg font-bold text-gray-900">{formatHours(summary?.total_hours)}h</span>
                 </div>
                 <div className="text-center p-3 bg-gray-100 rounded-lg">
-                  <div className="text-lg font-bold text-gray-900">{summary?.avg_daily_hours || '0.0'}h</div>
+                  <div className="text-lg font-bold text-gray-900">{formatHours(summary?.avg_daily_hours)}h</div>
                   <div className="text-xs text-gray-600">AVG DAILY HOURS</div>
                 </div>
               </div>
@@ -694,7 +705,7 @@ const MyAttendance = () => {
                 <div className="text-xs text-gray-600 mt-1">DAYS WORKED</div>
               </div>
               <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">₱{summary?.hourly_rate || '15.00'}</div>
+                <div className="text-2xl font-bold text-orange-600">₱{formatCurrency(summary?.hourly_rate)}</div>
                 <div className="text-xs text-gray-600 mt-1">HOURLY RATE</div>
               </div>
             </div>
@@ -708,7 +719,7 @@ const MyAttendance = () => {
               </div>
               <div className="p-3 bg-orange-50 rounded-lg">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-orange-600">₱{summary?.monthly_projection?.toFixed(2) || '0.00'}</div>
+                  <div className="text-lg font-bold text-orange-600">₱{formatCurrency(summary?.monthly_projection)}</div>
                   <div className="text-xs text-gray-600 mt-1">MONTHLY PROJECTION</div>
                 </div>
               </div>

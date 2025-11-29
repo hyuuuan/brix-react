@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const db = require('../database/connection');
 const { auth, optionalAuth } = require('../middleware/auth');
+const { toManilaMySQLDateTime } = require('../utils/dateUtils');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
@@ -154,7 +155,9 @@ router.post('/login', async (req, res) => {
             department: user.department,
             position: user.position,
             hire_date: user.hire_date,
-            last_login: toManilaMySQLDateTime()
+            last_login: toManilaMySQLDateTime(),
+            created_at: user.created_at,
+            failed_login_attempts: user.failed_login_attempts || 0
         };
 
         console.log('🔐 Step 15: Sending successful response');

@@ -6,12 +6,33 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getManilaTime } from '../../utils/dateUtils';
 
 const Header = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [saveStatus, setSaveStatus] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+
+  // Update current date every minute
+  useEffect(() => {
+    const updateDate = () => {
+      const manilaTime = getManilaTime();
+      const formatted = manilaTime.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      setCurrentDate(formatted);
+    };
+
+    updateDate();
+    const interval = setInterval(updateDate, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Map routes to page titles
   const pageTitles = {
@@ -146,7 +167,16 @@ const Header = ({ onMenuClick }) => {
           <h2 className="text-2xl font-bold text-gray-900">{currentPage}</h2>
         </div>
 
-        {isMyAttendancePage && (
+        <div className="flex items-center gap-4">
+          {/* Current Date Display */}
+          <div className="hidden md:flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+            <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="font-medium">{currentDate}</span>
+          </div>
+
+          {isMyAttendancePage && (
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
               <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold">
@@ -291,6 +321,7 @@ const Header = ({ onMenuClick }) => {
             </button>
           </div>
         )}
+        </div>
       </div>
     </header>
   );

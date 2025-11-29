@@ -216,7 +216,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-500'
+                      ? 'bg-primary-50 text-primary-700'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`
                 }
@@ -236,7 +236,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   className={({ isActive }) =>
                     `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-500'
+                        ? 'bg-primary-50 text-primary-700'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`
                   }
