@@ -79,9 +79,9 @@ const Analytics = () => {
       }
     }
     
-    // Date range filter
+    // Date range filter using Manila timezone
     const recordDate = new Date(record.date);
-    const today = new Date();
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
     today.setHours(0, 0, 0, 0);
     
     switch (filters.dateRange) {

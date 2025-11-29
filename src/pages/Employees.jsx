@@ -373,7 +373,7 @@ const EmployeeModal = ({ title, employee, onClose, onSubmit, isLoading }) => {
     phone: employee?.phone || '',
     department: employee?.department || '',
     position: employee?.position || '',
-    hire_date: employee?.hire_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+    hire_date: employee?.hire_date?.split('T')[0] || new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0],
     wage: employee?.wage || '',
     role: employee?.role || 'employee',
   });

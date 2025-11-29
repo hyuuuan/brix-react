@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { usePayrollRecords, useGeneratePayroll } from '../hooks/usePayroll';
 import { useEmployees, useUpdateEmployee } from '../hooks/useEmployees';
+import { overtimeApi } from '../api';
 
 const Payroll = () => {
   const [currentPeriod, setCurrentPeriod] = useState({
@@ -20,6 +21,7 @@ const Payroll = () => {
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [showWageModal, setShowWageModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [overtimeRequests, setOvertimeRequests] = useState([]);
 
   // Fetch all payroll records (not filtered by period initially)
   const { data: payrollData, isLoading: payrollLoading, refetch } = usePayrollRecords({
@@ -28,6 +30,70 @@ const Payroll = () => {
 
   const { data: employeesData } = useEmployees();
   const updateEmployee = useUpdateEmployee();
+
+  // Fetch overtime requests
+  useEffect(() => {
+    fetchOvertimeRequests();
+  }, []);
+
+  const fetchOvertimeRequests = async () => {
+    try {
+      const response = await overtimeApi.getAllOvertimeRequests({ limit: 50 });
+      if (response.success) {
+        setOvertimeRequests(response.data.requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching overtime requests:', error);
+    }
+  };
+
+  const handleApproveOvertimeRequest = async (id) => {
+    try {
+      console.log('Approving overtime request:', id);
+      const response = await overtimeApi.updateOvertimeRequest(id, { status: 'approved' });
+      console.log('Approve response:', response);
+      if (response.success) {
+        await fetchOvertimeRequests();
+        alert('Overtime request approved');
+      } else {
+        alert(response.message || 'Failed to approve overtime request');
+      }
+    } catch (error) {
+      console.error('Error approving overtime request:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert(error.response?.data?.message || error.message || 'Failed to approve overtime request');
+    }
+  };
+
+  const handleRejectOvertimeRequest = async (id) => {
+    if (!confirm('Are you sure you want to reject this overtime request?')) {
+      return;
+    }
+    
+    try {
+      console.log('Rejecting overtime request:', id);
+      const response = await overtimeApi.updateOvertimeRequest(id, { status: 'rejected' });
+      console.log('Reject response:', response);
+      if (response.success) {
+        await fetchOvertimeRequests();
+        alert('Overtime request rejected');
+      } else {
+        alert(response.message || 'Failed to reject overtime request');
+      }
+    } catch (error) {
+      console.error('Error rejecting overtime request:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert(error.response?.data?.message || error.message || 'Failed to reject overtime request');
+    }
+  };
 
   const handleEditWage = (employee) => {
     setSelectedEmployee(employee);
@@ -101,9 +167,7 @@ const Payroll = () => {
 
   const metrics = calculateMetrics();
 
-  // No overtime requests - real data only
-  // Overtime system would require backend implementation
-  const overtimeRequests = [];
+  const pendingOvertimeCount = overtimeRequests.filter(r => r.status === 'pending').length;
 
   return (
     <div className="p-6 bg-gray-50 min-h-full">
@@ -232,21 +296,23 @@ const Payroll = () => {
 
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-900 mb-2">Overtime Requests</h4>
-            <p className="text-xs text-orange-600">{overtimeRequests.filter(r => r.status === 'pending').length} pending</p>
+            <p className="text-xs text-orange-600">{pendingOvertimeCount} pending</p>
           </div>
 
           <div className="mb-4">
             <h5 className="text-xs font-semibold text-gray-700 mb-2">Recent Requests</h5>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-96 overflow-y-auto">
             {overtimeRequests.length > 0 ? (
-              overtimeRequests.map((request) => (
+              overtimeRequests.slice(0, 10).map((request) => (
                 <div key={request.id} className="border border-gray-200 rounded-lg p-3">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{request.name}</p>
-                      <p className="text-xs text-gray-600">Employee ID: {request.employeeId}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {request.first_name} {request.last_name}
+                      </p>
+                      <p className="text-xs text-gray-600">{request.employee_id} · {request.department}</p>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       request.status === 'approved' 
@@ -259,10 +325,27 @@ const Payroll = () => {
                     </span>
                   </div>
                   <div className="text-xs text-gray-600 space-y-1">
-                    <p>Request ID: {request.requestId} | {request.date}</p>
-                    <p>{request.hours} | {request.task}</p>
-                    <p className="text-gray-500">Submitted: {request.submitted}</p>
+                    <p>Date: {new Date(request.request_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    <p>Hours: {request.hours_requested}h</p>
+                    <p className="text-gray-700">Reason: {request.reason}</p>
+                    <p className="text-gray-500">Submitted: {new Date(request.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   </div>
+                  {request.status === 'pending' && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => handleApproveOvertimeRequest(request.id)}
+                        className="flex-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleRejectOvertimeRequest(request.id)}
+                        className="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
@@ -271,7 +354,6 @@ const Payroll = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm">No overtime requests</p>
-                <p className="text-xs mt-1">Overtime tracking requires backend implementation</p>
               </div>
             )}
           </div>
@@ -448,8 +530,8 @@ const WageEditModal = ({ employee, onClose, onSave, isLoading }) => {
 const ProcessPayrollModal = ({ onClose, onSuccess, employees }) => {
   const generatePayroll = useGeneratePayroll();
   
-  // Calculate default period (current month)
-  const today = new Date();
+  // Calculate default period (current month) in Manila timezone
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
   const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   

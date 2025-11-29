@@ -31,6 +31,7 @@ const Header = ({ onMenuClick }) => {
   const isAnalyticsPage = location.pathname === '/analytics';
   const isPayrollPage = location.pathname === '/payroll';
   const isSettingsPage = location.pathname === '/settings';
+  const isMyAttendancePage = location.pathname === '/my-attendance';
 
   // Dispatch custom event for Add Employee button
   const handleAddEmployee = () => {
@@ -47,7 +48,7 @@ const Header = ({ onMenuClick }) => {
     // Create CSV content
     const headers = ['Metric', 'Value'];
     const data = [
-      ['Export Date', new Date().toLocaleDateString()],
+      ['Export Date', new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })],
       ['Attendance Rate', '100%'],
       ['Punctuality Rate', '100%'],
       ['Total Hours', '1138h'],
@@ -64,7 +65,8 @@ const Header = ({ onMenuClick }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `analytics-report-${new Date().toISOString().split('T')[0]}.csv`);
+    const manilaDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+    link.setAttribute('download', `analytics-report-${manilaDate.toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -143,6 +145,31 @@ const Header = ({ onMenuClick }) => {
         <div className="flex-1 lg:ml-0 ml-4">
           <h2 className="text-2xl font-bold text-gray-900">{currentPage}</h2>
         </div>
+
+        {isMyAttendancePage && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+              <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold">
+                {user?.first_name?.[0]}{user?.last_name?.[0]}
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900">{user?.first_name} {user?.last_name}</div>
+                <div className="text-xs text-gray-500">ID: {user?.employee_id} • {user?.department || 'Operations'}</div>
+              </div>
+            </div>
+            <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+              <span>Current Month</span>
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('refreshMyAttendance'))}
+              className="p-2 text-cyan-600 bg-white border border-cyan-200 rounded-lg hover:bg-cyan-50"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {isEmployeesPage && (
           <div className="flex items-center space-x-3">

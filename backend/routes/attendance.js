@@ -341,9 +341,11 @@ router.get('/', auth, async (req, res) => {
     try {
         const {
             employee_id,
+            date,
             start_date,
             end_date,
             status,
+            search,
             page = 1,
             limit = 50,
             sort = 'date',
@@ -388,19 +390,33 @@ router.get('/', auth, async (req, res) => {
         }
 
         // Add date filters
-        if (start_date) {
-            query += ' AND ar.date >= ?';
-            params.push(start_date);
-        }
+        if (date) {
+            // Single date filter
+            query += ' AND ar.date = ?';
+            params.push(date);
+        } else {
+            // Date range filters
+            if (start_date) {
+                query += ' AND ar.date >= ?';
+                params.push(start_date);
+            }
 
-        if (end_date) {
-            query += ' AND ar.date <= ?';
-            params.push(end_date);
+            if (end_date) {
+                query += ' AND ar.date <= ?';
+                params.push(end_date);
+            }
         }
 
         if (status) {
             query += ' AND ar.status = ?';
             params.push(status);
+        }
+
+        // Add search filter (search by name or employee ID)
+        if (search) {
+            query += ' AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_id LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
         }
 
         // Add sorting
@@ -420,6 +436,7 @@ router.get('/', auth, async (req, res) => {
         let countQuery = `
             SELECT COUNT(*) as total
             FROM attendance_records ar
+            JOIN employees e ON ar.employee_id = e.employee_id
             ${whereClause}
         `;
         const countParams = [];
@@ -427,19 +444,30 @@ router.get('/', auth, async (req, res) => {
             countParams.push(targetEmployeeId);
         }
 
-        if (start_date) {
-            countQuery += ' AND ar.date >= ?';
-            countParams.push(start_date);
-        }
+        if (date) {
+            countQuery += ' AND ar.date = ?';
+            countParams.push(date);
+        } else {
+            if (start_date) {
+                countQuery += ' AND ar.date >= ?';
+                countParams.push(start_date);
+            }
 
-        if (end_date) {
-            countQuery += ' AND ar.date <= ?';
-            countParams.push(end_date);
+            if (end_date) {
+                countQuery += ' AND ar.date <= ?';
+                countParams.push(end_date);
+            }
         }
 
         if (status) {
             countQuery += ' AND ar.status = ?';
             countParams.push(status);
+        }
+
+        if (search) {
+            countQuery += ' AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_id LIKE ?)';
+            const searchTerm = `%${search}%`;
+            countParams.push(searchTerm, searchTerm, searchTerm);
         }
 
         const countResult = await db.execute(countQuery, countParams);

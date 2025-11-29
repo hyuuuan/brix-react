@@ -6,11 +6,21 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useEmployeeStats } from '../hooks/useEmployees';
 import { useAttendanceStats } from '../hooks/useAttendance';
+import { getManilaTime } from '../utils/dateUtils';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { data: employeeStats, isLoading: employeeLoading, error: employeeError } = useEmployeeStats();
   const { data: attendanceStats, isLoading: attendanceLoading, error: attendanceError } = useAttendanceStats();
+
+  // Get current Manila date for display
+  const manilaTime = getManilaTime();
+  const currentDate = manilaTime.toLocaleDateString('en-US', { 
+    timeZone: 'Asia/Manila',
+    weekday: 'short', 
+    month: 'short', 
+    day: 'numeric' 
+  });
 
   // Calculate attendance rate
   const totalEmployees = employeeStats?.data?.total_employees || 0;
@@ -206,7 +216,7 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-semibold text-gray-700">TODAY'S SUMMARY</h4>
-              <span className="text-xs text-gray-500">Fri, Nov 28</span>
+              <span className="text-xs text-gray-500">{currentDate}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-6">

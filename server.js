@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const { toManilaISO } = require('./backend/utils/dateUtils');
 // const rateLimit = require('express-rate-limit'); // Rate limiting disabled
 const path = require('path');
 require('dotenv').config({ path: '.env.backend' });
@@ -84,7 +85,7 @@ app.use(cors({
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Authorization'],
     optionsSuccessStatus: 204
@@ -123,7 +124,7 @@ app.get('/api/health', async (req, res) => {
         res.json({
             success: true,
             status: 'healthy',
-            timestamp: new Date().toISOString(),
+            timestamp: toManilaISO(),
             uptime: process.uptime(),
             environment: process.env.NODE_ENV || 'development',
             database: 'connected',
@@ -134,7 +135,7 @@ app.get('/api/health', async (req, res) => {
         res.status(503).json({
             success: false,
             status: 'unhealthy',
-            timestamp: new Date().toISOString(),
+            timestamp: toManilaISO(),
             error: 'Database connection failed'
         });
     }

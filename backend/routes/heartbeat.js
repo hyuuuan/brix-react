@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { toManilaISO } = require('../utils/dateUtils');
 
 // Heartbeat endpoint to maintain session activity
 router.get('/heartbeat', auth, async (req, res) => {
@@ -18,7 +19,7 @@ router.get('/heartbeat', auth, async (req, res) => {
                     full_name: req.user.first_name + ' ' + req.user.last_name,
                     role: req.user.role
                 },
-                timestamp: new Date().toISOString(),
+                timestamp: toManilaISO(),
                 session_status: 'active'
             }
         });

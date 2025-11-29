@@ -39,9 +39,14 @@ const Attendance = () => {
     return () => window.removeEventListener('openAddEntryModal', handleOpenModal);
   }, []);
 
+  // Fetch employees for filter dropdown
+  const { data: employeesData } = useEmployees({ status: 'active' });
+  const employees = employeesData?.data?.employees || [];
+
   const { data: statsData, isLoading: statsLoading } = useAttendanceStats();
   const { data: recordsData, isLoading: recordsLoading, error, refetch } = useAttendanceRecords({
     employee_id: filters.employee_id === 'all' ? undefined : filters.employee_id,
+    date: filters.date || undefined,
     status: filters.status === 'all' ? undefined : filters.status,
     search: filters.search || undefined,
     page: currentPage,
@@ -185,6 +190,11 @@ const Attendance = () => {
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="all">All Employees</option>
+              {employees.map((emp) => (
+                <option key={emp.employee_id} value={emp.employee_id}>
+                  {emp.employee_id} - {emp.first_name} {emp.last_name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -440,7 +450,7 @@ const Attendance = () => {
 const AttendanceModal = ({ title, record, onClose, onSubmit, isLoading }) => {
   const [formData, setFormData] = useState({
     employee_id: record?.employee_id || '',
-    date: record?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
+    date: record?.date?.split('T')[0] || new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0],
     time_in: record?.time_in || '',
     time_out: record?.time_out || '',
     status: record?.status || 'present',

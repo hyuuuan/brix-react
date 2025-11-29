@@ -154,7 +154,7 @@ router.post('/login', async (req, res) => {
             department: user.department,
             position: user.position,
             hire_date: user.hire_date,
-            last_login: new Date()
+            last_login: toManilaMySQLDateTime()
         };
 
         console.log('🔐 Step 15: Sending successful response');

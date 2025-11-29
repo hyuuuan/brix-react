@@ -31,6 +31,34 @@ const Settings = () => {
     autoDeactivate: false,
     inactiveThreshold: 90
   });
+  const [biometricSettings, setBiometricSettings] = useState({
+    enabled: false,
+    deviceIp: '',
+    devicePort: ''
+  });
+  const [csvSettings, setCsvSettings] = useState({
+    autoImportEnabled: false,
+    archiveProcessed: false,
+    importFolder: '',
+    archiveFolder: ''
+  });
+  const [integrationLogs, setIntegrationLogs] = useState({
+    biometric: {
+      lastSync: null,
+      status: 'Not configured'
+    },
+    csv: {
+      lastImport: null,
+      status: 'Not configured'
+    },
+    activity: [
+      {
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        level: 'INFO',
+        message: 'Integration module initialized'
+      }
+    ]
+  });
   const [formData, setFormData] = useState({
     companyName: '',
     companyAddress: '',
@@ -144,6 +172,73 @@ const Settings = () => {
     }
   };
 
+  const handleTestBiometricConnection = async () => {
+    try {
+      const manilaTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      setIntegrationLogs({
+        ...integrationLogs,
+        activity: [
+          {
+            timestamp: manilaTime.toISOString().slice(0, 16).replace('T', ' '),
+            level: 'INFO',
+            message: 'Testing biometric device connection...'
+          },
+          ...integrationLogs.activity
+        ]
+      });
+      // Add actual connection test logic here
+    } catch (error) {
+      console.error('Biometric connection test failed:', error);
+    }
+  };
+
+  const handleTestCsvImport = async () => {
+    try {
+      const manilaTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      setIntegrationLogs({
+        ...integrationLogs,
+        activity: [
+          {
+            timestamp: manilaTime.toISOString().slice(0, 16).replace('T', ' '),
+            level: 'INFO',
+            message: 'Testing CSV import...'
+          },
+          ...integrationLogs.activity
+        ]
+      });
+      // Add actual CSV import test logic here
+    } catch (error) {
+      console.error('CSV import test failed:', error);
+    }
+  };
+
+  const handleManualCsvImport = async () => {
+    try {
+      const manilaTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      setIntegrationLogs({
+        ...integrationLogs,
+        activity: [
+          {
+            timestamp: manilaTime.toISOString().slice(0, 16).replace('T', ' '),
+            level: 'INFO',
+            message: 'Manual CSV import initiated...'
+          },
+          ...integrationLogs.activity
+        ]
+      });
+      // Add actual manual CSV import logic here
+    } catch (error) {
+      console.error('Manual CSV import failed:', error);
+    }
+  };
+
+  const handleClearLogs = () => {
+    setIntegrationLogs({
+      ...integrationLogs,
+      activity: []
+    });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -218,7 +313,8 @@ const Settings = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `settings-${new Date().toISOString().split('T')[0]}.json`;
+      const manilaDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+      link.download = `settings-${manilaDate.toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1035,17 +1131,204 @@ const Settings = () => {
             )}
 
             {activeTab === 'link' && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-gray-900">Integration Links</h3>
+              <div className="space-y-6">
+                {/* Biometric Device Integration & Automatic CSV Import */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Biometric Device Integration */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <h3 className="text-lg font-bold text-gray-900">Biometric Device Integration</h3>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={biometricSettings.enabled}
+                          onChange={(e) => setBiometricSettings({
+                            ...biometricSettings,
+                            enabled: e.target.checked
+                          })}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Enable Biometric Device Integration</span>
+                      </label>
+
+                      <button
+                        onClick={handleTestBiometricConnection}
+                        disabled={!biometricSettings.enabled}
+                        className={`w-full py-3 px-4 rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-2 ${
+                          biometricSettings.enabled
+                            ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
+                            : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Test Connection
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Automatic CSV Import */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 className="text-lg font-bold text-gray-900">Automatic CSV Import</h3>
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={csvSettings.autoImportEnabled}
+                          onChange={(e) => setCsvSettings({
+                            ...csvSettings,
+                            autoImportEnabled: e.target.checked
+                          })}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Enable Automatic CSV Import</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={csvSettings.archiveProcessed}
+                          onChange={(e) => setCsvSettings({
+                            ...csvSettings,
+                            archiveProcessed: e.target.checked
+                          })}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Move processed files to archive folder</span>
+                      </label>
+
+                      <button
+                        onClick={handleTestCsvImport}
+                        disabled={!csvSettings.autoImportEnabled}
+                        className={`w-full py-3 px-4 rounded-lg border-2 border-dashed transition-colors flex items-center justify-center gap-2 ${
+                          csvSettings.autoImportEnabled
+                            ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
+                            : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                        </svg>
+                        Test Import
+                      </button>
+
+                      <button
+                        onClick={handleManualCsvImport}
+                        className="w-full py-3 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Manual Import Now
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="p-6">
-                  <p className="text-gray-600">Configure external integrations and API connections</p>
+
+                {/* Integration Status & Logs */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="flex items-center justify-between p-6 bg-gray-50 border-b border-gray-200">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      <h3 className="text-lg font-bold text-gray-900">Integration Status & Logs</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      {/* Biometric Device Status */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-1">Biometric Device</h4>
+                          <p className="text-sm text-gray-500 mb-1">
+                            {integrationLogs.biometric.status}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Last sync: {integrationLogs.biometric.lastSync || 'Never'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                      {/* CSV Import Status */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-gray-900 mb-1">CSV Import</h4>
+                            <p className="text-sm text-gray-500 mb-1">
+                              {integrationLogs.csv.status}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Last import: {integrationLogs.csv.lastImport || 'Never'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Activity */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-semibold text-gray-900">Recent Activity</h4>
+                        <button
+                          onClick={handleClearLogs}
+                          className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                        >
+                          Clear Logs
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {integrationLogs.activity.length > 0 ? (
+                          integrationLogs.activity.map((log, index) => (
+                            <div key={index} className="flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg">
+                              <span className="text-xs text-gray-500">{log.timestamp}</span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                log.level === 'INFO' ? 'bg-blue-100 text-blue-700' :
+                                log.level === 'SUCCESS' ? 'bg-green-100 text-green-700' :
+                                log.level === 'ERROR' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {log.level}
+                              </span>
+                              <span className="text-sm text-gray-700">{log.message}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-4 text-center text-sm text-gray-500">
+                            No recent activity
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
