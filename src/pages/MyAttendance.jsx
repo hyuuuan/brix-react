@@ -299,22 +299,6 @@ const MyAttendance = () => {
         </button>
       </div>
 
-      {/* Auto-refresh toggle */}
-      <div className="flex justify-end mb-6">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <div className="relative">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
-          </div>
-          <span className="text-sm font-medium text-gray-700">Auto-refresh</span>
-        </label>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Attendance Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -410,45 +394,75 @@ const MyAttendance = () => {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b">Hours Summary</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-bold text-gray-900">Hours Summary</h3>
+              </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Regular Hours:</span>
-                  <span className="text-sm font-semibold text-gray-900">{summary?.regular_hours || '0.0'}h</span>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Regular Hours</span>
+                    <span className="text-lg font-bold text-blue-600">{summary?.regular_hours || '0.0'}h</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Overtime Hours:</span>
-                  <span className="text-sm font-semibold text-gray-900">{summary?.overtime_hours || '0'}h</span>
+                <div className="p-3 bg-orange-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Overtime Hours</span>
+                    <span className="text-lg font-bold text-orange-600">{summary?.overtime_hours || '0'}h</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Hours:</span>
-                  <span className="text-sm font-semibold text-orange-600">{summary?.total_hours || '0.0'}h</span>
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Total Hours</span>
+                    <span className="text-lg font-bold text-purple-600">{summary?.total_hours || '0.0'}h</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Avg Daily:</span>
-                  <span className="text-sm font-semibold text-gray-900">{summary?.avg_daily_hours || '0.0'}h</span>
+                <div className="p-3 bg-gray-100 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Daily</span>
+                    <span className="text-lg font-bold text-gray-700">{summary?.avg_daily_hours || '0.0'}h</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b">Timing Patterns</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-bold text-gray-900">Timing Patterns</h3>
+              </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Avg Check-in:</span>
-                  <span className="text-sm font-semibold text-gray-900">{formatTime(summary?.avg_check_in) || '--:--'}</span>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Check-in</span>
+                    <span className="text-lg font-bold text-green-600">{formatTime(summary?.avg_check_in) || '--:--'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Avg Check-out:</span>
-                  <span className="text-sm font-semibold text-gray-900">{formatTime(summary?.avg_check_out) || '--:--'}</span>
+                <div className="p-3 bg-red-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Check-out</span>
+                    <span className="text-lg font-bold text-red-600">{formatTime(summary?.avg_check_out) || '--:--'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">On Time:</span>
-                  <span className="text-sm font-semibold text-green-600">{summary?.on_time_days || '0'} days</span>
+                <div className="p-3 bg-emerald-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">On Time</span>
+                    <span className="text-lg font-bold text-emerald-600">{summary?.on_time_days || '0'} days</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Late:</span>
-                  <span className="text-sm font-semibold text-orange-600">{summary?.late_days || '0'} days</span>
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Late</span>
+                    <span className="text-lg font-bold text-yellow-600">{summary?.late_days || '0'} days</span>
+                  </div>
                 </div>
               </div>
             </div>
