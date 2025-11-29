@@ -6,8 +6,10 @@
 import { useState, useEffect } from 'react';
 import { attendanceApi, overtimeApi } from '../api';
 import { getManilaTime, toManilaISODate, toManilaISODateTime, isManilaToday, formatManilaDate, getManilaDaysAgo } from '../utils/dateUtils';
+import { useAuth } from '../contexts/AuthContext';
 
 const MyAttendance = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentStatus, setCurrentStatus] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -77,6 +79,18 @@ const MyAttendance = () => {
       console.log('📊 Summary Response:', JSON.stringify(response, null, 2));
       if (response.success) {
         console.log('📊 Summary Data:', JSON.stringify(response.data, null, 2));
+        console.log('📊 Individual Fields:', {
+          total_days: response.data.total_days,
+          present_days: response.data.present_days,
+          total_hours: response.data.total_hours,
+          regular_hours: response.data.regular_hours,
+          overtime_hours: response.data.overtime_hours,
+          hourly_rate: response.data.hourly_rate,
+          overtime_rate: response.data.overtime_rate,
+          regular_pay: response.data.regular_pay,
+          overtime_pay: response.data.overtime_pay,
+          monthly_earnings: response.data.monthly_earnings
+        });
         setSummary(response.data);
       }
     } catch (error) {
@@ -89,9 +103,12 @@ const MyAttendance = () => {
       const endDate = toManilaISODate(getManilaTime());
       const startDate = toManilaISODate(getManilaDaysAgo(30));
       
+      // Always pass employee_id to get only current user's records
+      // even if user is admin, in MyAttendance we want their own records
       const response = await attendanceApi.getAttendanceRecords({
-        startDate,
-        endDate
+        employee_id: user?.employee_id,
+        start_date: startDate,
+        end_date: endDate
       });
       
       if (response.success) {

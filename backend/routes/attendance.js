@@ -352,6 +352,15 @@ router.get('/', auth, async (req, res) => {
             order = 'DESC'
         } = req.query;
 
+        console.log('📋 Get Attendance Records:', {
+            requestedBy: req.user.employee_id,
+            role: req.user.role,
+            queryParams: req.query,
+            employee_id,
+            start_date,
+            end_date
+        });
+
         // Admin/Manager users can see all records when no employee_id is specified
         // Non-admin users can only see their own records
         let targetEmployeeId = null;
@@ -371,6 +380,12 @@ router.get('/', auth, async (req, res) => {
             targetEmployeeId = req.user.employee_id;
             whereClause = 'WHERE ar.employee_id = ?';
         }
+
+        console.log('📋 Filter Logic:', {
+            targetEmployeeId,
+            whereClause,
+            willFilterByEmployee: !!targetEmployeeId
+        });
 
         let query = `
             SELECT 
@@ -761,6 +776,14 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
             ? (employeeId || req.user.employee_id) 
             : req.user.employee_id;
 
+        console.log('📊 Summary Endpoint Called:', {
+            requestUser: req.user.employee_id,
+            requestRole: req.user.role,
+            targetEmployeeId,
+            params: req.params,
+            query: req.query
+        });
+
         // Set date range based on period
         let startDate, endDate;
         if (start_date && end_date) {
@@ -791,7 +814,7 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
         const overtimeRate = wage * overtimeRateMultiplier;
 
         // Get comprehensive attendance data
-        const [attendanceData] = await db.execute(`
+        const attendanceData = await db.execute(`
             SELECT 
                 COUNT(*) as total_days,
                 SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_days,
@@ -802,7 +825,9 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
                 SUM(CASE WHEN total_hours <= 8 THEN total_hours ELSE 8 END) as regular_hours,
                 SUM(COALESCE(overtime_hours, CASE WHEN total_hours > 8 THEN total_hours - 8 ELSE 0 END)) as overtime_hours,
                 SUM(total_hours) as total_hours,
-                AVG(total_hours) as avg_daily_hours
+                AVG(total_hours) as avg_daily_hours,
+                AVG(TIME_TO_SEC(time_in)) as avg_check_in_seconds,
+                AVG(TIME_TO_SEC(time_out)) as avg_check_out_seconds
             FROM attendance_records 
             WHERE employee_id = ? AND DATE(date) >= ? AND DATE(date) <= ?
         `, [targetEmployeeId, startDate, endDate]);
@@ -816,7 +841,7 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
         });
 
         // Let's also check what records exist for this employee
-        const [checkRecords] = await db.execute(`
+        const checkRecords = await db.execute(`
             SELECT date, status, total_hours FROM attendance_records 
             WHERE employee_id = ? 
             ORDER BY date DESC 
@@ -841,6 +866,18 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
         const overtimeHours = parseFloat(stats.overtime_hours) || 0;
         const totalHours = parseFloat(stats.total_hours) || 0;
         const avgDailyHours = parseFloat(stats.avg_daily_hours) || 0;
+        
+        // Convert average check-in/out from seconds to HH:MM:SS format
+        const secondsToTime = (seconds) => {
+            if (!seconds) return null;
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        };
+        
+        const avgCheckIn = secondsToTime(stats.avg_check_in_seconds);
+        const avgCheckOut = secondsToTime(stats.avg_check_out_seconds);
         
         // Calculate earnings
         const regularPay = regularHours * wage;
@@ -880,6 +917,8 @@ router.get('/summary/:employeeId?', auth, async (req, res) => {
                 overtime_hours: parseFloat(overtimeHours.toFixed(1)),
                 total_hours: parseFloat(totalHours.toFixed(1)),
                 avg_daily_hours: parseFloat(avgDailyHours.toFixed(1)),
+                avg_check_in: avgCheckIn,
+                avg_check_out: avgCheckOut,
                 hourly_rate: parseFloat(wage.toFixed(2)),
                 overtime_rate: parseFloat(overtimeRate.toFixed(2)),
                 regular_pay: parseFloat(regularPay.toFixed(2)),
