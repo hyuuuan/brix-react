@@ -25,7 +25,7 @@ const unifiedRoutes = require('./backend/routes/unified');
 const overtimeRoutes = require('./backend/routes/overtime');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 20128;
 
 // Trust proxy - no longer needed for rate limiting but kept for other middleware
 app.set('trust proxy', 1);
@@ -67,7 +67,7 @@ app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        
+
         const allowedOrigins = [
             process.env.FRONTEND_URL || 'http://localhost:5500',
             'http://localhost:5173',
@@ -76,7 +76,7 @@ app.use(cors({
             'http://127.0.0.1:5500',
             'http://127.0.0.1:3000'
         ];
-        
+
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -103,7 +103,11 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Serve static files (your frontend)
-app.use(express.static(path.join(__dirname)));
+// In production, serve the built React app from 'dist' folder
+const staticPath = process.env.NODE_ENV === 'production'
+    ? path.join(__dirname, 'dist')
+    : path.join(__dirname);
+app.use(express.static(staticPath));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -120,7 +124,7 @@ app.get('/api/health', async (req, res) => {
     try {
         // Test database connection
         await db.execute('SELECT 1');
-        
+
         res.json({
             success: true,
             status: 'healthy',
@@ -164,34 +168,34 @@ app.get('/api', (req, res) => {
 app.get('*', (req, res) => {
     // Don't serve index.html for API routes
     if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ 
+        return res.status(404).json({
             success: false,
             message: 'API endpoint not found',
-            path: req.path 
+            path: req.path
         });
     }
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
-    
+
     // Handle specific error types
     if (err.type === 'entity.parse.failed') {
-        return res.status(400).json({ 
+        return res.status(400).json({
             success: false,
-            message: 'Invalid JSON data' 
+            message: 'Invalid JSON data'
         });
     }
-    
+
     if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({
             success: false,
             message: 'File too large'
         });
     }
-    
+
     if (err.name === 'ValidationError') {
         return res.status(400).json({
             success: false,
@@ -199,16 +203,16 @@ app.use((err, req, res, next) => {
             errors: err.errors
         });
     }
-    
+
     // Default error response
     res.status(err.status || 500).json({
         success: false,
-        message: process.env.NODE_ENV === 'production' 
-            ? 'Something went wrong!' 
+        message: process.env.NODE_ENV === 'production'
+            ? 'Something went wrong!'
             : err.message,
-        ...(process.env.NODE_ENV !== 'production' && { 
+        ...(process.env.NODE_ENV !== 'production' && {
             stack: err.stack,
-            error: err 
+            error: err
         })
     });
 });
@@ -243,7 +247,7 @@ const startServer = async () => {
         // Test database connection
         await db.execute('SELECT 1');
         console.log('✅ Database connection established');
-        
+
         app.listen(PORT, () => {
             console.log(`
 🚀 Bricks Attendance System Server Started
@@ -256,7 +260,7 @@ const startServer = async () => {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `);
         });
-        
+
     } catch (error) {
         console.error('❌ Failed to start server:', error);
         process.exit(1);

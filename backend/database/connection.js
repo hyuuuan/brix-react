@@ -5,8 +5,8 @@ require('dotenv').config();
 const connectionConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    user: process.env.DB_USER || 's24100604_bricksdb',
+    password: process.env.DB_PASSWORD || 'bricksdatabase',
     database: process.env.DB_NAME || 'bricks_attendance',
     multipleStatements: true,
     timezone: '+00:00', // Store everything in UTC

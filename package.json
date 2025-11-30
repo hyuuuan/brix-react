@@ -13,7 +13,12 @@
     "start": "concurrently \"npm run server\" \"npm run dev\"",
     "start:dev": "concurrently \"npm run server:dev\" \"npm run dev\"",
     "restart": "pkill -f 'node server.js' || true && pkill -f 'vite' || true && npm run start:dev",
-    "close": "pkill -f 'node server.js' || true && pkill -f 'vite' || true"
+    "close": "pkill -f 'node server.js' || true && pkill -f 'vite' || true",
+    "deploy": "npm run build && pm2 start ecosystem.config.js --env production",
+    "deploy:stop": "pm2 stop bricks-attendance",
+    "deploy:restart": "pm2 restart bricks-attendance",
+    "deploy:logs": "pm2 logs bricks-attendance",
+    "prod": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
