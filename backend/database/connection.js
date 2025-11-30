@@ -7,7 +7,7 @@ const connectionConfig = {
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 's24100604_bricksdb',
     password: process.env.DB_PASSWORD || 'bricksdatabase',
-    database: process.env.DB_NAME || 'bricks_attendance',
+    database: process.env.DB_NAME || 's24100604_bricksdb',
     multipleStatements: true,
     timezone: '+00:00', // Store everything in UTC
     charset: 'utf8mb4'
@@ -44,16 +44,16 @@ const initializeDatabase = async () => {
             charset: connectionConfig.charset
         };
         const tempConnection = await mysql.createConnection(tempConfig);
-        
+
         // Create database if it doesn't exist
         await tempConnection.execute(`CREATE DATABASE IF NOT EXISTS \`${connectionConfig.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
         await tempConnection.end();
-        
+
         // Test main connection
         const connection = await pool.getConnection();
         console.log(`✅ Connected to MySQL database: ${connectionConfig.database}`);
         connection.release();
-        
+
         return true;
     } catch (error) {
         console.error('❌ Database connection failed:', error);
@@ -80,16 +80,16 @@ const executeQuery = async (query, params = []) => {
 // Helper function to execute transactions
 const executeTransaction = async (queries) => {
     const connection = await pool.getConnection();
-    
+
     try {
         await connection.beginTransaction();
-        
+
         const results = [];
         for (const { query, params } of queries) {
             const [result] = await connection.execute(query, params || []);
             results.push(result);
         }
-        
+
         await connection.commit();
         return results;
     } catch (error) {
