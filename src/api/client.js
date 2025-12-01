@@ -5,7 +5,10 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// In production the frontend will be served from the same origin as the API.
+// Use a relative URL by default so browser requests go to the same host that served the app.
+// You can still override this at build time with `VITE_API_URL`.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 console.log('🌐 API Client: Base URL configured as:', API_BASE_URL);
 

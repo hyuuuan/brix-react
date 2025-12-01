@@ -7,6 +7,8 @@ module.exports = {
   apps: [{
     name: 'bricks-attendance',
     script: './server.js',
+    // Ensure PM2 uses the ecosystem file's directory as the working directory
+    cwd: __dirname,
     
     // Environment
     env_production: {
